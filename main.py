@@ -17,7 +17,7 @@ def start():
         start()
 
 def login():
-    log = input('Введите имя: ')
+    log = input('Введите имя ')
     pas = input('Введите пароль: ')
     with open('Base.txt', 'r', encoding='utf-8') as login:
         size = os.path.getsize('Base.txt')

@@ -17,42 +17,56 @@ def start():
         start()
 
 def login():
-    log = input('Введите имя ')
-    pas = input('Введите пароль: ')
+    log = input('Введите имя: ')
     with open('Base.txt', 'r', encoding='utf-8') as login:
         size = os.path.getsize('Base.txt')
         if size == 0:
             print('Необходима регистрация!')
-            start()
+            registr()
         else:
             for i in login.readlines():
                 user = i.split(' ')
-                if log == user[0] and pas == user[1]:
-                    print(f'Wellcome, {user[0]}')
-                    exit()
+                if log == user[0]:
+                    pas = input('Введите пароль: ')
+                    if pas == user[1]:
+                        print(f'Wellcome, {user[0]}')
+                        exit()
+                    else:
+                        print('Введен не верный пароль! \n')
+                        main()
+                elif log != user[0]:
+                    pass
                 else:
                     print('Необходима регистрация!')
-                    start()
+                    registr()
 
 
 def registr():
-    user = []
+    userreg = []
     log = input('Введите имя: ')
+    with open('Base.txt', 'r', encoding='utf-8') as login:
+        for i in login.readlines():
+            user = i.split(' ')
+            if log == user[0]:
+                print('Такое имя занято! Введите другое! \n')
+                registr()
+            else:
+                continue
     if 3 < len(log) < 20:
-        user.append(log)
+        userreg.append(log)
     else:
-        print('Логин должен быть больше 3 но меньше 20 символов! Повторите ввод!')
+        print('Логин должен быть больше 3 но меньше 20 символов! Повторите ввод! \n')
         registr()
     pas = input('Введите пароль: ')
     if 4 < len(pas) < 32:
-        user.append(pas)
+        userreg.append(pas)
     else:
-        print('Пароль должен быть больше 4 но меньше 32 символов! Повторите ввод!')
+        print('Пароль должен быть больше 4 но меньше 32 символов! Повторите ввод! \n')
         registr()
-    data = ' '.join(user)
-    with open('Base.txt', 'w', encoding='utf-8') as login:
-        login.write(data)
-
+    data = ' '.join(userreg)
+    with open('Base.txt', 'a', encoding='utf-8') as login:
+        login.write(f'{data} \n')
+    start()
 
 def main():
     start()

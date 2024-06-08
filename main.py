@@ -1,58 +1,158 @@
+"""
+Модуль для управления авторизацией и регистрацией пользователей.
+
+Этот модуль предоставляет функции для регистрации новых пользователей,
+авторизации существующих пользователей,
+а также проверки корректности введенных данных. Основная функция запускает
+меню, позволяющее выбрать между
+авторизацией, регистрацией и выходом из программы.
+
+Модуль включает следующие функции:
+
+- `authorization()`: Функция для авторизации пользователя.
+- `registration()`: Функция для регистрации нового пользователя.
+- `validate_length(input_str, min_len, max_len, input_type)`: Функция для
+проверки длины строки.
+- `verify_user(login)`: Функция для проверки наличия пользователя и
+корректности введенного пароля.
+- `start()`: Основная функция для запуска меню выбора действия.
+"""
 import os
+from file_worker import *
+BASE = FileWorker()
 
 
 def authorization():
+    """
+    Функция для авторизации пользователя.
+
+    Запрашивает у пользователя логин и проверяет, существует ли пользователь
+    с таким логином. Если файл с пользователями пуст, предлагает пройти
+    регистрацию. Если пользователь с таким логином найден, запрашивает пароль и
+    проверяет его корректность.
+    В случае неудачной авторизации предлагает повторить попытку.
+    """
     login = input('Введите имя: ')
     try:
-        with open('Base.txt', 'r', encoding='utf-8') as verify:
-            size = os.path.getsize('Base.txt')
-            if size == 0:
-                print('Необходима регистрация!')
-                registration()
-            else:
-                for i in verify.readlines():
-                    user = i.split(' ')
-                    if login == user[0]:
-                        password = input('Введите пароль: ')
-                        if password == user[1]:
-                            print(f'Wellcome, {user[0]}')
-                            exit()
-                        else:
-                            print('Пара логин/ пароль не совпадает! \n')
-                            authorization()
+        size = os.path.getsize(BASE_FILE)
+        if size == 0:
+            print('Необходима регистрация!')
+            registration()
+        else:
+            result = verify_user(login)
+            if result is False:
+                authorization()
+            elif result is None:
                 print('Необходима регистрация!')
                 registration()
     except FileNotFoundError:
-        with open('Base.txt', 'a', encoding='utf-8'):
-            pass
+        BASE.create_file()
         authorization()
 
 
 def registration():
+    """
+    Функция для регистрации нового пользователя.
+
+    Запрашивает у пользователя логин и проверяет, не занят ли он.
+    Проверяет корректность введенного логина и пароля по длине.
+    В случае успешной проверки сохраняет нового пользователя в файл.
+    """
     login = input('Введите имя: ')
-    with open('Base.txt', 'r', encoding='utf-8') as base:
-        for i in base.readlines():
-            user = i.split(' ')
-            if login == user[0]:
-                print('Такое имя занято! Введите другое! \n')
-                registration()
-            else:
-                continue
-    if not len(login) in range(3, 21):
-        print('Логин должен быть больше 3 но меньше 20 символов! Повторите ввод! \n')
+    for i in BASE.read_file():
+        user = i.split(' ')
+        if login == user[0]:
+            print('Такое имя занято! Введите другое! \n')
+            registration()
+            return
+
+    if not validate_length(login, 3, 20, 'Логин'):
         registration()
+        return
+
     password = input('Введите пароль: ')
-    if not len(password) in range(4, 33):
-        print('Пароль должен быть больше 4 но меньше 32 символов! Повторите ввод! \n')
+    if not validate_length(password, 4, 32, 'Пароль'):
         registration()
-    with open('Base.txt', 'a', encoding='utf-8') as base:
-        base.write(f'{login} {password} \n')
-    main()
+        return
+
+    BASE.write_file(login, password)
+    print(f'Пользователь {login} успешно зарегистрирован!')
+    start()
 
 
-def main():
+def validate_length(
+        input_str: str, min_len: int, max_len: int, input_type: str) -> bool:
+    """
+    Функция для проверки длины строки.
+
+    Args:
+        input_str (str): Входная строка для проверки.
+        min_len (int): Минимально допустимая длина строки.
+        max_len (int): Максимально допустимая длина строки.
+        input_type (str): Тип вводимых данных (например, 'Логин' или 'Пароль').
+
+    Returns:
+        bool: Возвращает True, если длина строки находится в допустимом
+        диапазоне, иначе False.
+    """
+    if not len(input_str) in range(min_len, max_len + 1):
+        print(
+            f'{input_type} должен быть больше {min_len - 1} '
+            f'но меньше {max_len + 1} символов!'
+            ' Повторите ввод! \n'
+        )
+        return False
+    return True
+
+
+def verify_user(login: str) -> bool | None:
+    """
+        Функция проверяет наличие пользователя с заданным логином и
+        проверяет корректность введенного пароля.
+
+        Функция считывает данные пользователей из файла, проверяет наличие
+        пользователя с заданным логином, и запрашивает ввод пароля. Если
+        пароль совпадает с паролем пользователя, выводится сообщение приветствия
+        и программа завершает работу. В противном случае выводится сообщение об
+        ошибке.
+
+    Args:
+        login (str): Логин пользователя, которого необходимо проверить.
+
+    Returns:
+        bool | None: Возвращает False, если пара логин/пароль не совпадает,
+                         возвращает None, если пользователь с заданным логином
+                         не найден.
+    """
+    for i in BASE.read_file():
+        user = i.strip().split(' ')
+        if login == user[0]:
+            password = input('Введите пароль: ')
+            if password == user[1]:
+                print(f'Welcome, {user[0]}')
+                exit()
+            else:
+                print('Пара логин/пароль не совпадает!\n')
+                return False
+    return None
+
+
+def start():
+    """
+    Основная функция для запуска меню выбора действия.
+
+    Предлагает пользователю выбрать одно из действий:
+    - Авторизация (1)
+    - Регистрация (2)
+    - Выход (3)
+
+    В зависимости от выбора вызывает соответствующие функции.
+    Обрабатывает некорректный ввод и предлагает повторить выбор.
+    """
     try:
-        choice = int(input('Для входа выберите - 1,\nДля регистрации - 2,\nДля выхода  - 3\n'))
+        choice = int(input(
+            'Для входа выберите - 1,\nДля регистрации - 2,\nДля выхода  - 3\n')
+        )
         if choice == 1:
             authorization()
         elif choice == 2:
@@ -61,11 +161,11 @@ def main():
             exit()
         else:
             print('Введенное число должно быть от 1 до 3!')
-            main()
+            start()
     except ValueError:
         print('Вы ввели буквы, а надо цифры!')
-        main()
+        start()
 
 
 if __name__ == '__main__':
-    main()
+    start()
